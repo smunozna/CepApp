@@ -1,0 +1,662 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>CepApp - Cooperativa</title>
+  <style>
+    .hidden { display: none; } 
+
+    body {
+      font-family: 'Segoe UI', sans-serif;
+      background-image: url('imagenes/fondo_cooperativa.png');
+      background-repeat: no-repeat;
+      background-position: center top;
+      background-size: cover;
+      background-attachment: scroll;
+      margin: 150px;
+      padding: 0;
+      display: flex;
+      justify-content: center;
+      min-height: 100vh;
+    }
+
+    .main-box {
+      background-color: #f9f6ed;
+      padding: 30px 20px;
+      border-radius: 20px;
+      max-width: 420px;
+      width: 100%;
+      margin-top: 30px;
+      box-shadow: 0px 0px 12px rgba(0, 0, 0, 0.1);
+      position: relative;
+    }
+
+    h1 {
+      color: #5b7c0a;
+      text-align: center;
+      margin-bottom: 20px;
+    }
+
+    #userBtn {
+      background: none;
+      border: none;
+      position: absolute;
+      top: 50px;
+      right: 300px;
+      cursor: pointer;
+    }
+
+    #userBtn img {
+      width: 80px;
+      height: 80px;
+    }
+
+    #userMenu {
+      display: none;
+      position: absolute;
+      top: 150px;
+      right: 300px;
+      background-color: #b2b18c;
+      color: white;
+      padding: 15px;
+      border-radius: 15px;
+      width: 200px;
+      z-index: 10;
+      text-align: center;
+    }
+
+    #userMenu p {
+      margin: 0 0 10px 0;
+      font-weight: bold;
+    }
+
+    #userMenu.hidden {
+      display: none;
+    }
+
+    #logoutBtn {
+      background-color: #7a9114;
+      border: none;
+      color: white;
+      font-weight: bold;
+      padding: 8px 12px;
+      border-radius: 20px;
+      cursor: pointer;
+    }
+
+    #logoutBtn:hover {
+      background-color: #677b10;
+    }
+
+    .formulario {
+      margin-bottom: 25px;
+      min-width: 400px;
+    }
+
+    form {
+      display: flex;
+      flex-direction: column;
+      min-width: 250px;
+    }
+
+    input, select, button {
+      margin: 6px 0;
+      padding: 10px;
+      font-size: 14px;
+      border-radius: 12px;
+      border: none;
+    }
+
+    button {
+      background-color: #7a9114;
+      color: white;
+      font-weight: bold;
+      cursor: pointer;
+    }
+
+    #createUserMsg { color: green; font-size: 13px; }
+    #updateUserMsg { color: blue; font-size: 13px; }
+
+    .formulario h3 {
+      margin-bottom: 10px;
+      font-size: 16px;
+      color: #5b7c0a;
+    }
+
+    #tablaDiagnosticos {
+      margin-top: 10px;
+      width: 100%;
+      border-collapse: collapse;
+      display: none;
+      font-size: 13px;
+      overflow-x: auto;
+    }
+
+    #tablaDiagnosticos th,
+    #tablaDiagnosticos td {
+      border: 1px solid #ccc;
+      padding: 6px;
+      text-align: center;
+    }
+
+    #tablaDiagnosticos th {
+      background-color: #dfe7d9;
+    }
+  
+    .formulario-contenedor {
+      display: flex;
+      justify-content: center;
+      align-items: flex-start;
+      gap: 40px;
+      flex-wrap: wrap;
+      margin-bottom: 30px;
+      margin-top: 30px;
+    }
+
+    .formulario-contenedor .formulario {
+      position: relative;
+    }
+
+    .formulario-contenedor .formulario:first-child::after {
+      content: "";
+      position: absolute;
+      top: 0;
+      right: -20px;
+      height: 100%;
+      width: 1px;
+      background-color: #ccc;
+      flex: 1 1 300px;
+      max-width: 300px;
+    }
+
+    .tabla-contenedor {
+      max-height: 240px;
+      overflow-y: auto;
+      border: 1px solid #ccc;
+      border-radius: 8px;
+    }
+    
+    #tablaDiagnosticos thead th {
+      position: sticky;
+      top: 0;
+      background-color: #dfe7d9;
+      z-index: 1;
+    }
+
+    #uploadLabelMsg, #downloadMsg {
+      font-size: 13px;
+      margin-top: 5px;
+    }
+  
+    .formulario-grid {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      margin-top: 60px;
+    }
+
+    .fila {
+      display: flex;
+      align-content: space-between;
+      gap: 50px;
+      min-width: 800px;
+      justify-content: left;
+    }
+
+    .centrado {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    .eliminar-btn {
+      background-color: #c0392b;
+      color: white;
+      border: none;
+      padding: 5px 8px;
+      border-radius: 8px;
+      font-size: 13px;
+      cursor: pointer;
+    }
+    .eliminar-btn:hover {
+      background-color: #922b21;
+    }
+</style>
+</head>
+
+<body>
+  <!-- FORMULARIO LOGIN -->
+  <div id="loginDiv" class="">
+    <h3 style="color: #5b7c0a;">Iniciar sesión (Cooperativa)</h3>
+    <form id="loginForm">
+      <input type="text" id="username" required placeholder="Usuario"><br />
+      <input type="password" id="password" required placeholder="Contraseña"><br />
+      <button type="submit">Entrar</button>
+    </form>
+    <p id="loginMsg" style="color:red;"></p>
+  </div>
+
+  <!-- Sección de login (solo visible si no hay sesión activa) -->
+  <div id="mainDiv" class="hidden">
+    <!-- Sección principal, oculta hasta autenticarse -->
+    <button id="userBtn"><img src="imagenes/logo_user.png" alt="Usuario" /></button>
+    <div id="userMenu" class="hidden">
+      <p id="userNombre">Usuario: admin</p>
+      <button id="logoutBtn">CERRAR SESIÓN</button>
+    </div>
+
+  <!-- Contenedor general de formularios -->
+  <div class="formulario-grid">
+    <!-- Fila 1 -->
+    <div class="fila">
+      <!-- Crear nuevo usuario -->
+      <div class="formulario">
+        <h3>Crear nuevo usuario</h3>
+        <form id="createUserForm">
+          <input type="text" id="newUsername" placeholder="Usuario" required />
+          <input type="password" id="newPassword" placeholder="Contraseña" required />
+          <input type="text" id="fullName" placeholder="Nombre completo" required />
+          <select id="role">
+            <option value="agricultor">Agricultor</option>
+            <option value="admin">Administrador</option>
+          </select>
+          <button type="submit">Crear Usuario</button>
+          <p id="createUserMsg"></p>
+        </form>
+      </div>
+
+      <!-- Subir imagen ya etiquetada -->
+      <div class="formulario">
+        <h3>Subir imagen etiquetada</h3>
+        <form id="uploadLabelForm">
+          <input type="file" id="labelFileInput" accept="image/*" required />
+          <select id="etiquetaInput" required>
+            <option value="">Selecciona etiqueta</option>
+            <option value="Podredumbre_negra">Podredumbre negra</option>
+            <option value="Mildiu">Mildiu</option>
+            <option value="Esca">Esca</option>
+            <option value="Sana">Sana</option>
+            <option value="Tizon_Foliar">Tizon Foliar</option>
+          </select>
+          <button type="submit">Subir imagen etiquetada</button>
+          <p id="uploadLabelMsg"></p>
+        </form>
+      </div>
+    </div>
+
+    <!-- Fila 2 -->
+    <div class="fila">
+      <!-- Modificar usuario -->
+      <div class="formulario">
+        <h3>Modificar datos de un usuario</h3>
+        <form id="updateUserForm">
+          <input type="text" id="modUsername" placeholder="Usuario a modificar" required />
+          <input type="text" id="modFullName" placeholder="Nuevo nombre completo" required />
+          <select id="newRole">
+            <option value="agricultor">Agricultor</option>
+            <option value="admin">Administrador</option>
+          </select>
+          <button type="submit">Modificar Usuario</button>
+          <p id="updateUserMsg"></p>
+        </form>
+      </div>
+
+      <!-- Descargar imágenes clasificadas -->
+      <div class="formulario">
+        <h3>Descargar imágenes clasificadas</h3>
+        <form id="downloadForm">
+          <div class="input-group">
+            <label for="claseSelect">Selecciona clase para descargar:</label>
+            <select id="claseSelect">
+              <option value="Podredumbre_negra">Podredumbre negra</option>
+              <option value="Mildiu">Mildiu</option>
+              <option value="Esca">Esca</option>
+              <option value="Sana">Sana</option>
+              <option value="Tizon_Foliar">Tizon foliar</option>
+            </select>
+          </div>
+          <button id="downloadBtn" type="button">Descargar ZIP</button>
+          <p id="downloadMsg"></p>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- Fila 3 -->
+  <div class="formulario centrado" id="verDiagnosticosBlock">
+    <h3>Ver diagnósticos registrados</h3>
+    <button id="verDiagnosticosBtn">Ver diagnósticos</button>
+    <div class="tabla-contenedor">
+      <table id="tablaDiagnosticos">
+        <thead>
+          <tr>
+            <th>Usuario</th><th>Enfermedad</th><th>Confianza</th><th>Latitud</th><th>Longitud</th><th>Fecha</th><th>Acciones</th>
+          </tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+    </div>
+  </div>
+
+  <script>
+    // Asignar funcionalidad a los botones de eliminar
+    document.addEventListener('DOMContentLoaded', () => {
+      const token = localStorage.getItem('admin_token'); // Token JWT del admin
+      const userSpan = document.getElementById('userNombre');
+      const loginDiv = document.getElementById('loginDiv');
+      const mainDiv = document.getElementById('mainDiv');
+      const loginForm = document.getElementById('loginForm');
+      const logoutBtn = document.getElementById('logoutBtn');
+      const loginMsg = document.getElementById('loginMsg');
+
+      // Función para mostrar la pantalla principal
+      function showMain() {
+        loginDiv.classList.add('hidden');
+        mainDiv.classList.remove('hidden');
+      }
+
+      // Función para mostrar el login y ocultar todo lo demás
+      function showLogin() {
+        loginDiv.classList.remove('hidden');
+        mainDiv.classList.add('hidden');
+        loginMsg.textContent = '';
+        document.querySelectorAll('input').forEach(el => el.value = '');
+        document.querySelectorAll('select').forEach(el => el.value = 'agricultor');
+        document.getElementById('createUserMsg').textContent = '';
+        document.getElementById('updateUserMsg').textContent = '';
+        document.getElementById('tablaDiagnosticos').style.display = 'none';
+        document.getElementById('userMenu').style.display = 'none';
+      }
+      
+      // Intenta obtener la información del usuario autenticado
+      async function fetchUserInfo() {
+        try {
+          const resp = await fetch('/api/me', {
+            headers: { 'Authorization': `Bearer ${token}` }
+          });
+          if (!resp.ok) throw new Error();
+          const user = await resp.json();
+          userSpan.textContent = 'Usuario: ' + user.username;
+        } catch {
+          // Si falla, no hace nada (no redirige)
+        }
+      }
+      fetchUserInfo();
+
+      // Mostrar/ocultar menú desplegable de usuario
+      document.getElementById('userBtn').addEventListener('click', () => {
+        const menu = document.getElementById('userMenu');
+        menu.classList.toggle('hidden');
+      });
+
+      document.getElementById('userBtn').addEventListener('click', async () => {
+        const menu = document.getElementById('userMenu');
+        menu.style.display = (menu.style.display === 'block') ? 'none' : 'block';
+
+        const token = localStorage.getItem('admin_token');
+        try {
+          const response = await fetch('/api/me', {
+            headers: { Authorization: `Bearer ${token}` }
+          });
+          const user = await response.json();
+          document.getElementById('userNombre').textContent = 'Usuario: ' + user.username;
+        } catch (err) {
+          console.error('No se pudo obtener la información del usuario.');
+        }
+      });
+
+      // Cierre de sesión: borra token y muestra pantalla de login
+      document.getElementById('logoutBtn').addEventListener('click', () => {
+        localStorage.removeItem('admin_token');
+        showLogin(); // Vuelve a mostrar el formulario de login
+      });
+
+      // Crear un nuevo usuario: se recoge el formulario y se envía al backend
+      document.getElementById('createUserForm').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const newUsername = document.getElementById('newUsername').value;
+        const newPassword = document.getElementById('newPassword').value;
+        const fullName = document.getElementById('fullName').value;
+        const role = document.getElementById('role').value;
+
+        try {
+          const response = await fetch('/api/create_user', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${token}`
+            },
+            body: JSON.stringify({ username: newUsername, password: newPassword, full_name: fullName, role })
+          });
+
+          if (!response.ok) {
+            const errorData = await response.json();
+            throw new Error(errorData.detail || 'Error desconocido');
+          }
+
+          document.getElementById('createUserMsg').textContent = `✅ Usuario '${newUsername}' creado como '${role}'`;
+        } catch (err) {
+          document.getElementById('createUserMsg').textContent = err.message;
+        }
+      });
+
+      // Modificar usuario existente: envía nuevo nombre y rol
+      document.getElementById('updateUserForm').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const username = document.getElementById('modUsername').value;
+        const fullName = document.getElementById('modFullName').value;
+        const newRole = document.getElementById('newRole').value;
+
+        try {
+          const response = await fetch('/api/update_user', {
+            method: 'PUT',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${token}`
+            },
+            body: JSON.stringify({ username, full_name: fullName, new_role: newRole })
+          });
+
+          if (!response.ok) {
+            const errorData = await response.json();
+            throw new Error(errorData.detail || 'Error desconocido');
+          }
+
+          document.getElementById('updateUserMsg').textContent = `🔁 Usuario '${username}' actualizado`;
+        } catch (err) {
+          document.getElementById('updateUserMsg').textContent = err.message;
+        }
+      });
+
+      // Consulta de entidades en Orion y despliegue en tabla
+      document.getElementById('verDiagnosticosBtn').addEventListener('click', async () => {
+        const tabla = document.getElementById("tablaDiagnosticos");
+        const tbody = tabla.querySelector("tbody");
+
+        try {
+          const res = await fetch("/api/orion/entidades", {
+            headers: { Authorization: `Bearer ${localStorage.getItem('admin_token')}` }
+          });
+          const datos = await res.json();
+          tbody.innerHTML = "";
+
+          datos.forEach(ent => {
+            const id = ent.id;
+            const fila = document.createElement("tr");
+            fila.innerHTML = `
+              <td>${ent.usuario?.value || "-"}</td>
+              <td>${ent.enfermedad?.value || "-"}</td>
+              <td>${ent.confianza?.value || "-"}</td>
+              <td>${ent.latitud?.value || "-"}</td>
+              <td>${ent.longitud?.value || "-"}</td>
+              <td>${ent.fecha?.value?.replace("T", " ").split(".")[0] || "-"}</td>
+              <td><button class="eliminar-btn" data-id="${id}">Eliminar</button></td>
+            `;
+            tbody.appendChild(fila);
+          });
+
+          // Funcionalidad para eliminar una predicción
+          document.querySelectorAll(".eliminar-btn").forEach(btn => {
+            btn.addEventListener("click", async () => {
+              const id = btn.dataset.id;
+              if (!confirm(`¿Eliminar la predicción ${id}?`)) return;
+
+              try {
+                const res = await fetch(`/api/orion/eliminar?entity_id=${encodeURIComponent(id)}`, {
+                  method: "DELETE",
+                  headers: { Authorization: `Bearer ${localStorage.getItem('admin_token')}` }
+                });
+
+                const data = await res.json();
+                if (res.ok) {
+                  alert("✅ " + data.mensaje);
+                  btn.closest("tr").remove();
+                } else {
+                  alert("❌ " + (data.detail || "Error al eliminar"));
+                }
+              } catch (err) {
+                alert("❌ Error al conectar con el servidor");
+              }
+            });
+          });
+
+          tabla.style.display = "table";
+        } catch (err) {
+          alert("Error al consultar Orion");
+          console.error(err);
+        }
+      });
+
+      // Subir imagen etiquetada: usa formulario con file y etiqueta
+      document.getElementById('uploadLabelForm').addEventListener('submit', async e => {
+        e.preventDefault();
+        const file = document.getElementById('labelFileInput').files[0];
+        const etiqueta = document.getElementById('etiquetaInput').value;
+        const msg = document.getElementById('uploadLabelMsg');
+        msg.textContent = "";
+
+        if (!file || !etiqueta) {
+          msg.textContent = "Por favor, selecciona imagen y etiqueta.";
+          return;
+        }
+
+        const formData = new FormData();
+        formData.append('file', file);
+        formData.append('etiqueta', etiqueta);
+
+        const token = localStorage.getItem('admin_token');
+        try {
+          const res = await fetch('/api/upload_labeled_image', {
+            method: 'POST',
+            headers: { 'Authorization': `Bearer ${token}` },
+            body: formData,
+          });
+          const data = await res.json();
+          if (res.ok) {
+            msg.style.color = 'green';
+            msg.textContent = data.mensaje;
+          } else {
+            msg.style.color = 'red';
+            msg.textContent = data.detail || "Error al subir imagen.";
+          }
+        } catch (err) {
+          msg.style.color = 'red';
+          msg.textContent = "Error en la conexión.";
+          console.error(err);
+        }
+      });
+
+      // Descargar imágenes clasificadas en formato ZIP
+      document.getElementById('downloadBtn').addEventListener('click', async () => {
+        const clase = document.getElementById('claseSelect').value;
+        const msg = document.getElementById('downloadMsg');
+        msg.textContent = "";
+
+        const token = localStorage.getItem('admin_token');
+        const url = `/api/download_images/${clase}`;
+
+        try {
+          const response = await fetch(url, {
+            headers: { 'Authorization': `Bearer ${token}` }
+          });
+          if (!response.ok) throw new Error("Error al descargar");
+
+          const blob = await response.blob();
+          const link = document.createElement('a');
+          link.href = window.URL.createObjectURL(blob);
+          link.download = `${clase}.zip`;
+          document.body.appendChild(link);
+          link.click();
+          link.remove();
+          msg.style.color = 'green';
+          msg.textContent = "Descarga iniciada.";
+        } catch (error) {
+          msg.style.color = 'red';
+          msg.textContent = "No se pudo descargar el archivo.";
+          console.error(error);
+        }
+      });
+
+      // Gestión de inicio de sesión: si el usuario es admin, entra al panel
+      loginForm.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        loginMsg.textContent = '';
+        const username = document.getElementById('username').value;
+        const password = document.getElementById('password').value;
+
+        try {
+          const response = await fetch('/api/token', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+            body: new URLSearchParams({ username, password })
+          });
+
+          if (!response.ok) throw new Error('Usuario o contraseña incorrectos');
+
+          const data = await response.json();
+          localStorage.setItem('admin_token', data.access_token);
+
+          const userInfoResponse = await fetch('/api/me', {
+            headers: { 'Authorization': `Bearer ${data.access_token}` }
+          });
+          const userInfo = await userInfoResponse.json();
+
+          if (userInfo.role !== 'admin') {
+            throw new Error('Acceso denegado. Se requiere rol de administrador.');
+          }
+
+          document.getElementById('userNombre').textContent = 'Usuario: ' + userInfo.username;
+          showMain();
+        } catch (err) {
+          loginMsg.textContent = err.message;
+        }
+      });
+
+      logoutBtn.addEventListener('click', () => {
+        localStorage.removeItem('admin_token');
+        showLogin();
+      });
+
+      // Auto-login si ya hay token válido al cargar
+      window.onload = async () => {
+        if (!token) return;
+
+        try {
+          const userInfoResponse = await fetch('/api/me', {
+            headers: { 'Authorization': `Bearer ${token}` }
+          });
+          const userInfo = await userInfoResponse.json();
+
+          if (userInfo.role !== 'admin') throw new Error();
+          document.getElementById('userNombre').textContent = 'Usuario: ' + userInfo.username;
+          showMain();
+        } catch {
+          localStorage.removeItem('admin_token');
+          showLogin();
+        }
+      };
+    });
+  </script>
+</body>
+</html>

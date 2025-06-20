@@ -1,0 +1,485 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>CepApp - Diagnóstico</title>
+  <style>
+    body {
+      font-family: 'Segoe UI', sans-serif;
+      background: url('imagenes/fondo_agricultor.png') no-repeat center center fixed;
+      background-size: cover;
+      margin: 0;
+      padding: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: flex-start;
+      padding-top: 40px;
+      min-height: 100vh;
+    }
+
+    #userBtn {
+      background: none;
+      border: none;
+      position: absolute;
+      top: 40px;
+      right: 20px;
+      cursor: pointer;
+    }
+
+    #userBtn img {
+      width: 50px;
+      height: 50px;
+    }
+
+    #userMenu {
+      display: none;
+      position: absolute;
+      top: 90px;
+      right: 30px;
+      background-color: #b2b18c;
+      color: white;
+      padding: 15px;
+      border-radius: 15px;
+      width: 200px;
+      z-index: 10;
+      text-align: center;
+    }
+
+    #userMenu p {
+      margin: 0 0 10px 0;
+      font-weight: bold;
+    }
+
+    #logoutBtn {
+      background-color: #7a9114;
+      border: none;
+      color: white;
+      font-weight: bold;
+      padding: 8px 12px;
+      border-radius: 20px;
+      cursor: pointer;
+    }
+
+    #logoutBtn:hover {
+      background-color: #677b10;
+    }
+
+    form {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      width: 80%;
+      max-width: 180px;
+    }
+
+    #fileInput {
+      display: none;
+    }
+
+    #customFileBtn {
+      display: inline-block;
+      background-color: #7a9114;
+      color: white;
+      font-weight: bold;
+      padding: 12px;
+      border-radius: 20px;
+      font-size: 16px;
+      text-align: center;
+      cursor: pointer;
+      width: 100%;
+      margin-top: 70px;
+      margin-bottom: 10px;
+    }
+
+    #submitBtn {
+      width: 100%;
+      padding: 12px;
+      margin: 20px 0;
+      border: none;
+      border-radius: 20px;
+      font-size: 16px;
+      background-color: #7a9114;
+      color: white;
+      font-weight: bold;
+      cursor: pointer;
+    }
+
+    .image-container {
+      width: 200px;
+      height: 200px;
+      border: 2px solid #000;
+      overflow: hidden;
+      position: relative;
+      touch-action: none;
+      margin-top: 5px;
+    }
+
+    #preview {
+      position: absolute;
+      top: 0;
+      left: 0;
+      display: none;
+      cursor: grab;
+      user-select: none;
+    }
+
+    #preview:active {
+      cursor: grabbing;
+    }
+
+    #resultado {
+      background-color: #b2b18c;
+      color: white;
+      padding: 15px;
+      border-radius: 20px;
+      font-size: 15px;
+      margin-top: 10px;
+      width: 80%;
+      max-width: 220px;
+      text-align: center;
+    }
+
+    #alertaZona {
+      position: fixed;
+      bottom: 20px;
+      left: 20px;
+      background-color: #bfc269;
+      color: #333;
+      padding: 15px 20px;
+      border-radius: 15px;
+      box-shadow: 0 0 8px rgba(0,0,0,0.3);
+      z-index: 1000;
+      max-width: 300px;
+      font-size: 14px;
+      font-weight: bold;
+    }
+
+    #alertaZona h4 {
+      margin: 0 0 10px;
+      font-size: 16px;
+      color: #333;
+    }
+
+    #alertaLista {
+      margin: 0;
+      padding-left: 16px;
+    }
+
+    #alertaZona button#cerrarAlerta:hover {
+      color: #333;
+    }
+  </style>
+</head>
+
+<body>
+  <!-- Botón de usuario con icono -->
+  <button id="userBtn"><img src="imagenes/logo_user.png" alt="Usuario" /></button>
+
+  <!-- Menú desplegable del usuario (nombre y logout) -->
+  <div id="userMenu">
+    <p id="userNombre">Usuario: nombre</p>
+    <button id="logoutBtn">CERRAR SESIÓN</button>
+  </div>
+
+  <form id="uploadForm">
+    <!-- Botón visual personalizado para seleccionar archivo -->
+    <label for="fileInput" id="customFileBtn">HACER FOTO</label>
+    <!-- Contenedor para vista previa de la imagen -->
+    <input type="file" id="fileInput" accept="image/*" required />
+    <div class="image-container" id="imageContainer">
+      <img id="preview" src="" alt="Vista previa" />
+    </div>
+    <!-- Botón para enviar la imagen -->
+    <button id="submitBtn" type="submit">ENVIAR</button>
+  </form>
+
+  <canvas id="cropCanvas" width="300" height="300" style="display:none;"></canvas>
+
+  <!-- Zona donde se muestran resultados tras enviar la imagen -->  
+  <div id="resultado">
+    Usuario: ---<br />
+    Estado: ---<br />
+    Ubicación: ---
+  </div>
+
+  <!-- Alerta de enfermedades cercanas -->
+  <div id="alertaZona" style="display:none;">
+    <button id="cerrarAlerta" style="float:right; background:none; border:none; font-size:18px; font-weight:bold; cursor:pointer;">✖</button>
+    <h4>🚨 Alerta cercana</h4>
+    <ul id="alertaLista"></ul>
+  </div>
+
+  <script>
+    const token = localStorage.getItem('token');
+    const userSpan = document.getElementById('userNombre');
+    const resultado = document.getElementById('resultado');
+    const preview = document.getElementById('preview');
+    const container = document.getElementById('imageContainer');
+    const canvas = document.getElementById('cropCanvas');
+    const ctx = canvas.getContext('2d');
+
+    // Si no hay token, redirige al login
+    if (!token) window.location.href = 'login.html';
+
+    // Obtiene los datos del usuario con el token para mostrar el nombre
+    async function fetchUserInfo() {
+      try {
+        const resp = await fetch('/api/me', {
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+        if (!resp.ok) throw new Error();
+        const user = await resp.json();
+        userSpan.textContent = 'Usuario: ' + user.username;
+      } catch {
+        window.location.href = 'login.html';
+      }
+    }
+    fetchUserInfo();
+
+    // Variables para manipular la imagen cargada
+    let image = new Image();
+    let naturalW, naturalH;
+    let scaleFactor = 1;
+    let zoomLevel = 1;
+    let currentX = 0, currentY = 0;
+    let isDragging = false;
+    let startX = 0, startY = 0;
+
+    // Inicializa ubicación por defecto como desconocida
+    let locationData = { latitud: "Desconocida", longitud: "Desconocida" };
+
+    // Consulta si hay alertas cercanas desde Orion
+    async function comprobarNotificaciones() {
+      if (locationData.latitud === "Desconocida" || locationData.longitud === "Desconocida") return;
+
+      const formData = new FormData();
+      formData.append("latitud", locationData.latitud);
+      formData.append("longitud", locationData.longitud);
+
+      try {
+        const resp = await fetch("/api/notificaciones", {
+          method: "POST",
+          headers: { Authorization: `Bearer ${token}` },
+          body: formData
+        });
+
+        if (!resp.ok) throw new Error("Error al consultar alertas");
+        const data = await resp.json();
+
+        // Si hay alertas, muestra ventana flotante
+        if (data.alertas.length > 0) {
+          const alertaZona = document.getElementById("alertaZona");
+          const lista = document.getElementById("alertaLista");
+          lista.innerHTML = "";
+          data.alertas.forEach(a => {
+            const li = document.createElement("li");
+            li.textContent = `${a.enfermedad} - ${a.fecha} - ${a.distancia_km} km`;
+            lista.appendChild(li);
+          });
+          alertaZona.style.display = "block";
+        }
+      } catch (err) {
+        console.error("Error al comprobar notificaciones:", err);
+      }
+    }
+
+    // Botón para cerrar alerta
+    document.getElementById("cerrarAlerta").addEventListener("click", () => {
+      document.getElementById("alertaZona").style.display = "none";
+    });
+
+    // Obtiene la geolocalización del usuario
+    window.onload = () => {
+      if (navigator.geolocation) {
+        navigator.geolocation.getCurrentPosition(
+          (pos) => {
+            locationData.latitud = pos.coords.latitude.toString();
+            locationData.longitud = pos.coords.longitude.toString();
+            console.log("Ubicación obtenida:", locationData);
+            comprobarNotificaciones();
+          },
+          (err) => {
+            console.warn("No se pudo obtener ubicación, se enviará 'Desconocida'.", err);
+          }
+        );
+      }
+    };
+
+    // Carga de la imagen seleccionada y vista previa
+    document.getElementById('fileInput').addEventListener('change', () => {
+      const file = document.getElementById('fileInput').files[0];
+      if (!file) return;
+
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        image = new Image();
+        image.src = e.target.result;
+        image.onload = () => {
+          naturalW = image.naturalWidth;
+          naturalH = image.naturalHeight;
+          const containerSize = 300;
+          const imageRatio = naturalW / naturalH;
+
+          // Ajuste de escala según la proporción de la imagen
+          if (imageRatio > 1) {
+            scaleFactor = containerSize / naturalH;
+            preview.style.width = `${naturalW * scaleFactor}px`;
+            preview.style.height = `${containerSize}px`;
+            currentX = (containerSize - naturalW * scaleFactor) / 2;
+            currentY = 0;
+          } else {
+            scaleFactor = containerSize / naturalW;
+            preview.style.width = `${containerSize}px`;
+            preview.style.height = `${naturalH * scaleFactor}px`;
+            currentX = 0;
+            currentY = (containerSize - naturalH * scaleFactor) / 2;
+          }
+
+          preview.src = image.src;
+          preview.style.display = "block";
+          updatePosition();
+        };
+      };
+      reader.readAsDataURL(file);
+    });
+
+    // Control de zoom de imagen en la vista previa
+    function updateZoom() {
+      preview.style.transform = `translate(${currentX}px, ${currentY}px) scale(${zoomLevel})`;
+    }
+
+    // Control de movimiento de imagen en la vista previa
+    function updatePosition() {
+      updateZoom();
+    }
+
+    // Control arrastre con ratón (para pruebas desde el ordenador)
+    container.addEventListener("mousedown", (e) => {
+      isDragging = true;
+      startX = e.clientX - currentX;
+      startY = e.clientY - currentY;
+    });
+    window.addEventListener("mouseup", () => isDragging = false);
+    window.addEventListener("mousemove", (e) => {
+      if (!isDragging) return;
+      currentX = e.clientX - startX;
+      currentY = e.clientY - startY;
+      updatePosition();
+    });
+
+    // Control táctil (arrastrar)
+    container.addEventListener("touchstart", (e) => {
+      isDragging = true;
+      const touch = e.touches[0];
+      startX = touch.clientX - currentX;
+      startY = touch.clientY - currentY;
+    });
+    container.addEventListener("touchmove", (e) => {
+      if (!isDragging) return;
+      const touch = e.touches[0];
+      currentX = touch.clientX - startX;
+      currentY = touch.clientY - startY;
+      updatePosition();
+    });
+    container.addEventListener("touchend", () => isDragging = false);
+
+    // Zoom con dos dedos (pinch)
+    let initialDistance = null;
+    function getTouchDistance(e) {
+      const [touch1, touch2] = e.touches;
+      const dx = touch2.clientX - touch1.clientX;
+      const dy = touch2.clientY - touch1.clientY;
+      return Math.sqrt(dx * dx + dy * dy);
+    }
+    container.addEventListener("touchstart", (e) => {
+      if (e.touches.length === 2) {
+        initialDistance = getTouchDistance(e);
+      }
+    });
+    container.addEventListener("touchmove", (e) => {
+      if (e.touches.length === 2 && initialDistance) {
+        const currentDistance = getTouchDistance(e);
+        const delta = currentDistance - initialDistance;
+        zoomLevel += delta * 0.005;
+        zoomLevel = Math.min(Math.max(zoomLevel, 0.5), 3);
+        updateZoom();
+        initialDistance = currentDistance;
+      }
+    });
+    container.addEventListener("touchend", (e) => {
+      if (e.touches.length < 2) {
+        initialDistance = null;
+      }
+    });
+
+    // Envío de imagen recortada + ubicación al backend para predicción
+    document.getElementById('uploadForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      ctx.clearRect(0, 0, 300, 300);
+      const drawX = -currentX / scaleFactor;
+      const drawY = -currentY / scaleFactor;
+      const drawW = 300 / scaleFactor;
+      const drawH = 300 / scaleFactor;
+      ctx.drawImage(image, drawX, drawY, drawW, drawH, 0, 0, 300, 300);
+
+      // Añade fondo blanco (para evitar transparencia)
+      const tempCanvas = document.createElement("canvas");
+      tempCanvas.width = 300;
+      tempCanvas.height = 300;
+      const tempCtx = tempCanvas.getContext("2d");
+      tempCtx.fillStyle = "#ffffff";
+      tempCtx.fillRect(0, 0, 300, 300);
+      tempCtx.drawImage(canvas, 0, 0);
+
+      // Convierte a imagen JPEG y la sube
+      tempCanvas.toBlob(async (blob) => {
+        const formData = new FormData();
+        formData.append("file", blob, "recorte.jpg");
+        formData.append("latitud", locationData.latitud);
+        formData.append("longitud", locationData.longitud);
+
+        try {
+          const response = await fetch('/api/predict', {
+            method: 'POST',
+            headers: { 'Authorization': `Bearer ${token}` },
+            body: formData
+          });
+          if (!response.ok) throw new Error('Error en la predicción');
+          const result = await response.json();
+
+          // Formatea y muestra el resultado
+          const estado = result.clase === "Sana" ? "Sana" : "Enferma";
+          let resultadoHtml = `
+            Usuario: ${result.usuario}<br>
+            Estado: ${estado}<br>
+          `;
+          if (estado === "Enferma") {
+            resultadoHtml += `Enfermedad: ${result.clase}<br>`;
+          }
+          const lat = parseFloat(result.latitud).toFixed(5);
+          const lon = parseFloat(result.longitud).toFixed(5);
+          resultadoHtml += `Ubicación:<br>Lat: ${lat}, Lon: ${lon}`;
+          resultado.innerHTML = resultadoHtml;
+
+        } catch (err) {
+          resultado.textContent = err.message;
+        }
+      }, "image/jpeg");
+    });
+
+    // Mostrar/ocultar menú del usuario
+    document.getElementById('userBtn').addEventListener('click', () => {
+      const menu = document.getElementById('userMenu');
+      menu.style.display = (menu.style.display === 'block') ? 'none' : 'block';
+    });
+
+    // Cierre de sesión
+    document.getElementById('logoutBtn').addEventListener('click', () => {
+      localStorage.removeItem('token');
+      window.location.href = 'login.html';
+    });
+  </script>
+</body>
+</html>
