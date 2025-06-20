@@ -48,6 +48,9 @@ CepApp/
 │         └── orion.py
 ├── EntrenamientoEfficientNet.ipynb   # Cuaderno Jupyter para el entrenamiento del modelo IA
 └── README.md                         # Este archivo
+```
+
+---
 
 ## ⚙️ Instalación y ejecución local
 
@@ -56,21 +59,25 @@ CepApp/
 ```bash
 git clone https://github.com/tuusuario/CepApp.git
 cd CepApp/diagnostico_uvas
+```
 
 ### 2. Crear entorno virtual
 
 ```bash
 python -m venv venv
 source venv/bin/activate
+```
 
 ### 3. Instalar dependencias
 
 ```bash
 pip install -r requirements.txt
+```
 
 ### 4. Ejecutar el backend (FastAPI)
 
 ```bash
 uvicorn main:app --host 0.0.0.0 --port 8000 --reload
+```
 
 Accede a http://localhost:8000 para usar la aplicación.
